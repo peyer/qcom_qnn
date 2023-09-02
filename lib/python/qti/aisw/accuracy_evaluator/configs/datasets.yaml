@@ -1,0 +1,193 @@
+##############################################################################
+#
+# Copyright (c) 2022 Qualcomm Technologies, Inc.
+# All Rights Reserved.
+# Confidential and Proprietary - Qualcomm Technologies, Inc.
+#
+# All data and information contained in or disclosed by this document are
+# confidential and proprietary information of Qualcomm Technologies, Inc., and
+# all rights therein are expressly reserved. By accepting this material, the
+# recipient agrees that this material and the information contained therein
+# are held in confidence and in trust and will not be used, copied, reproduced
+# in whole or in part, nor its contents revealed in any manner to others
+# without the express written permission of Qualcomm Technologies, Inc.
+#
+##############################################################################
+
+#QACC Datasets Definition File
+
+Datasets:
+    COCO2017:
+        path: '/home/ml-datasets/COCO/2017/'
+        inputlist_file: inputlist.txt
+        calibration:
+            type: dataset
+            file: coco_cal_list.txt
+
+    COCO2014_5k:
+        path: '/home/ml-datasets/COCO/2014/'
+        inputlist_file: inputlist_5k.txt
+        calibration:
+            type: dataset
+            file: coco_cal_list.txt
+
+    COCO2014:
+        path: '/home/ml-datasets/COCO/2014/'
+        inputlist_file: inputlist.txt
+        calibration:
+            type: index
+            file: calibration-index.txt
+
+    ILSVRC2012:
+        path: '/home/ml-datasets/imageNet/'
+        inputlist_file: inputlist.txt
+        calibration:
+            type: dataset
+            file: calibration.txt
+
+    SQUAD:
+        path: '/home/ml-datasets/squad_v1.1'
+        inputlist_file: datafile.txt
+        calibration:
+            type: dataset
+            file: calib_datafile.txt
+
+    SQUAD2:
+        path: '/home/ml-datasets/squad_v2.0/'
+        inputlist_file: datafile.txt
+        calibration:
+            type: dataset
+            file: calib.json
+
+    SYN_CHINESE_LP:
+        path: /home/ml-datasets/Synthetic_Chinese_License_Plates
+        inputlist_file: val.txt
+        calibration:
+            type: dataset
+            file: calibration.txt
+
+    VOC2007:
+        path: '/home/ml-datasets/VOC/VOC2007/'
+        inputlist_file: inputlist.txt
+        calibration:
+            type: dataset
+            file: calibration.txt
+
+    VOC2012Segmentation:
+        path: '/home/ml-datasets/VOC/VOC2012/'
+        inputlist_file: inputlist_segmentation.txt
+        calibration:
+            type: dataset
+            file: calibration.txt
+
+    WIDERFACE:
+        path: '/home/ml-datasets/WIDER_val/'
+        inputlist_file: inputlist.txt
+        calibration:
+            type: dataset
+            file: calibration.txt
+
+    SEMANTIC_KITTI:
+        path: '/home/ml-datasets/SEMANTIC-KITTI/dataset/sequences/'
+        inputlist_file: inputlist_semantic.txt
+        calibration:
+            type: dataset
+            file: calibration.txt
+
+    COCO2017_KEYPOINT:
+        path: '/home/ml-datasets/COCO/2017/'
+        inputlist_file: inputlist.txt
+        calibration:
+            type: dataset
+            file: coco2017_keypoints_calibration.txt
+
+    WikiText:
+        path: /home/ml-datasets/wikitext-2
+        inputlist_file: list.txt
+        calibration:
+            type: index
+            file: calibration-index.txt
+
+    LFW:
+        path: '/home/ml-datasets/LFW'
+        inputlist_file: inputlist.txt
+        calibration:
+            type: dataset
+            file: lfw_calib.txt
+
+    KITTI:
+        path: '/home/ml-datasets/KITTI'
+        inputlist_file: inputlist.txt
+        calibration:
+            type: dataset
+            file: calibration.txt
+
+    WMT20:
+        path: '/home/ml-datasets/WMT/WMT20/'
+        inputlist_file: newstest2017-ende-src.en
+        calibration:
+            type: index
+            file: calibration-index.txt
+
+    OPENIMAGES-MLPERF-V6:
+        path: '/home/ml-datasets/OpenImages/V6/validation'
+        inputlist_file: inputlist.txt
+        calibration:
+            type: dataset
+            file: calibration.txt
+
+    COCO2017_CAPTIONS:
+        path: '/home/ml-datasets/COCO/2017/'
+        inputlist_file: inputlist.txt
+        calibration:
+            type: dataset
+            file: coco_cal_list.txt
+
+    TERABYTE-40M:
+        path: '/home/ml-datasets/DLRM/40M/'
+        inputlist_file: input_list.txt
+        calibration:
+            type: dataset
+            file: calib_list.txt
+
+    TERABYTE-10M:
+        path: '/home/ml-datasets/DLRM/10M/'
+        inputlist_file: input_list.txt
+        calibration:
+            type: dataset
+            file: calib_list.txt
+
+    WikiText_62_doc:
+        path: /home/ml-datasets/wikitext-2-62-doc/data
+        inputlist_file: dataset_info.json
+        calibration:
+            type: index
+            file: calibration-index.txt
+
+    SuperRes_openimages_360p:
+        path: '/home/ml-datasets/SuperRes/openimags_resize_data/'
+        inputlist_file: inputlist_360p.txt
+        calibration:
+            type: dataset
+            file: inputlist_360p.txt
+
+    SuperRes_openimages_480p:
+        path: '/home/ml-datasets/SuperRes/openimags_resize_data/'
+        inputlist_file: inputlist_480p.txt
+        calibration:
+            type: dataset
+            file: inputlist_480p.txt
+
+    SuperRes_openimages_720p:
+        path: '/home/ml-datasets/SuperRes/openimags_resize_data/'
+        inputlist_file: inputlist_720p.txt
+        calibration:
+            type: dataset
+            file: inputlist_720p.txt
+
+    SuperRes_openimages_1080p:
+        path: '/home/ml-datasets/SuperRes/openimags_resize_data/'
+        inputlist_file: inputlist_1080p.txt
+        calibration:
+            type: dataset
+            file: inputlist_1080p.txt

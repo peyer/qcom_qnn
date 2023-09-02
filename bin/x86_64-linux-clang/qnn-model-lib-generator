@@ -1,0 +1,209 @@
+#!/usr/bin/env bash
+
+#
+# Copyright (c) 2020-2023 Qualcomm Technologies, Inc.
+# All Rights Reserved.
+# Confidential and Proprietary - Qualcomm Technologies, Inc.
+#
+
+set -e  # catch failure if not explicitly caught
+
+QNN_MODEL_CPP=""
+QNN_MODEL_BIN=""
+declare -A DEFAULT_SUPPORT_TARGETS=(["x86_64-linux-clang"]="linux-x86_64" \
+                              ["aarch64-android"]="arm64-v8a")
+declare -A OTHER_SUPPORT_TARGETS=(["aarch64-qnx"]="qnx710-arm64")
+OTHER_SUPPORT_TARGETS+=(["aarch64-oe-linux-gcc11.2"]="oe-linux-aarch64-gcc11.2")
+OTHER_SUPPORT_TARGETS+=(["aarch64-oe-linux-gcc9.3"]="oe-linux-aarch64-gcc9.3")
+OTHER_SUPPORT_TARGETS+=(["aarch64-oe-linux-gcc8.2"]="oe-linux-aarch64-gcc8.2")
+OTHER_SUPPORT_TARGETS+=(["aarch64-ubuntu-gcc7.5"]="ubuntu-aarch64-gcc7.5")
+OTHER_SUPPORT_TARGETS+=(["aarch64-ubuntu-gcc9.4"]="ubuntu-aarch64-gcc9.4")
+
+LIB_TARGETS=(${!DEFAULT_SUPPORT_TARGETS[*]})
+LIB_OUTPUT_DIR="$PWD/libs/"
+QNN_X86_TARGET_ROOT=`dirname $(readlink -f ${0})`/../
+QNN_MODEL_JNI_DIR=${QNN_X86_TARGET_ROOT}/../share/QNN/converter/jni
+QNN_MODEL_BUILD_DIR=$(mktemp -d)
+QNN_MODEL_BUILD_JNI_DIR="$QNN_MODEL_BUILD_DIR/jni"
+
+function usage(){
+cat << EOF
+usage: $(basename ${BASH_SOURCE[${#BASH_SOURCE[@]} - 1]}) [-h] [-c <QNN_MODEL>.cpp] [-b <QNN_MODEL>.bin]
+       [-t LIB_TARGETS ] [-l LIB_NAME] [-o OUTPUT_DIR]
+Script compiles provided Qnn Model artifacts for specified targets.
+
+Required argument(s):
+ -c <QNN_MODEL>.cpp                    Filepath for the qnn model .cpp file
+
+optional argument(s):
+ -b <QNN_MODEL>.bin                    Filepath for the qnn model .bin file
+                                       (Note: if not passed, runtime will fail if .cpp needs any items from a .bin file.)
+
+ -t LIB_TARGETS                        Specifies the targets to build the models for
+                                       Available Targets: ${!DEFAULT_SUPPORT_TARGETS[*]} ${!OTHER_SUPPORT_TARGETS[*]}
+                                       Default: ${LIB_TARGETS[*]}
+ -l LIB_NAME                           Specifies the name to use for libraries. Default: uses name in <model.bin> if provided,
+                                       else generic qnn_model.so
+ -o OUTPUT_DIR                         Location for saving output libraries. Default: ${LIB_OUTPUT_DIR}
+
+EOF
+}
+
+OPTIND=1
+while getopts "h?c:b:t:l:o:" opt; do
+    case "$opt" in
+    h)
+        usage;
+        exit 0
+        ;;
+    c) QNN_MODEL_CPP=$OPTARG;;
+    b) QNN_MODEL_BIN=$OPTARG;;
+    t) LIB_TARGETS=($OPTARG);;
+    l) export QNN_MODEL_LIB_NAME=$OPTARG;;
+    o) LIB_OUTPUT_DIR=`readlink -f $OPTARG`;;
+    \?)
+    usage;
+    exit 1 ;;
+    esac
+done
+
+# error check required variables
+if [[ -z ${QNN_MODEL_CPP} ]]
+then
+  echo "ERROR: Qnn model .cpp must be provided"
+  exit 1
+elif [[ ! -f ${QNN_MODEL_CPP} ]]
+then
+  echo "ERROR: File ${QNN_MODEL_CPP} not found."
+  exit 1
+fi
+
+if [[ ! -z ${QNN_MODEL_BIN} ]]
+then
+  if [[ ! -f ${QNN_MODEL_BIN} ]]
+  then
+    echo "ERROR: File ${QNN_MODEL_BIN} not found."
+    exit 1
+  elif [[ "${QNN_MODEL_BIN##*.}" != "bin" ]]
+  then
+    echo "ERROR: File ${QNN_MODEL_BIN} is not a bin model file."
+    exit 1
+  fi
+fi
+
+# check Targets are all supported
+for TARGET in "${LIB_TARGETS[@]}"
+do
+  TARGET_FOUND=false
+  for ELEM in "${!DEFAULT_SUPPORT_TARGETS[@]}"; do [[ "${ELEM}" == "${TARGET}" ]] && TARGET_FOUND=true; done
+  for ELEM in "${!OTHER_SUPPORT_TARGETS[@]}"; do [[ "${ELEM}" == "${TARGET}" ]] && TARGET_FOUND=true; done
+  if [[ ${TARGET_FOUND} == false ]]
+  then
+    echo "ERROR: Unsupported Target provided: ${TARGET}. Supported Targets include: ${!DEFAULT_SUPPORT_TARGETS[*]} ${!OTHER_SUPPORT_TARGETS[*]}"
+    exit 1
+  fi
+done
+
+if [[ ! -d ${LIB_OUTPUT_DIR} ]]
+then
+  echo "INFO: Creating Output dir ${LIB_OUTPUT_DIR}."
+  mkdir -p ${LIB_OUTPUT_DIR}
+fi
+
+# setup clean up of files for on any exit.
+function clean_up {
+  # clean up
+  QNN_MODEL_FILENAME=$(basename ${QNN_MODEL_CPP})
+  popd > /dev/null
+  /bin/rm -rf ${QNN_MODEL_BUILD_DIR}
+}
+trap clean_up EXIT
+
+# Copy over the models and QNN Model helper src files to build dir
+/bin/cp -rf ${QNN_MODEL_JNI_DIR}/../* ${QNN_MODEL_BUILD_DIR}
+/bin/cp ${QNN_MODEL_CPP} ${QNN_MODEL_BUILD_JNI_DIR}
+if [[ ! -z ${QNN_MODEL_BIN} ]]
+then
+  /bin/cp ${QNN_MODEL_BIN} ${QNN_MODEL_BUILD_JNI_DIR}
+fi
+
+# Perform Compilation
+pushd ${QNN_MODEL_BUILD_DIR} > /dev/null
+for QNN_TARGET in "${LIB_TARGETS[@]}"
+do
+  TARGET=${DEFAULT_SUPPORT_TARGETS[${QNN_TARGET}]}
+  if [[ -z ${TARGET} ]]
+  then
+    TARGET=${OTHER_SUPPORT_TARGETS[${QNN_TARGET}]}
+  fi
+  # Infer the compiler from target tuple
+  if [[ ${QNN_TARGET} == *"clang"* ]]
+  then
+    QNN_CXX="clang++-9"
+  fi
+  echo -e "\n--------------------------"
+  echo "INFO: Building for target: ${QNN_TARGET}"
+  echo -e "--------------------------"
+  if [[ ${TARGET} == "linux-x86_64"  ]]
+  then
+    if ! command -v ${QNN_CXX} &> /dev/null
+    then
+      echo "[WARNING] Can't find ${QNN_CXX}. Setting QNN_CXX to clang++"
+      QNN_CXX="clang++"
+    fi
+    make CXX=${QNN_CXX} -f Makefile.linux-x86_64
+  elif [[ ${TARGET} == "arm64-v8a" ]]
+  then
+    export QNN_ANDROID_APP_ABIS=${TARGET}
+    # Android setup is properly checked by Android.mk
+    ndk-build
+    unset QNN_ANDROID_APP_ABIS
+  elif [[ ${TARGET} == "qnx710-arm64" ]]
+  then
+    QNN_CXX="aarch64-unknown-nto-qnx7.1.0-g++"
+    make CXX=${QNN_CXX} -f Makefile.${TARGET}
+  elif [[ ${TARGET} == "oe-linux-aarch64-gcc11.2" ]]
+  then
+    QNN_CXX="${QNN_AARCH64_LINUX_OE_GCC_112}/sysroots/x86_64-qtisdk-linux/usr/bin/aarch64-oe-linux/aarch64-oe-linux-g++ --sysroot=${QNN_AARCH64_LINUX_OE_GCC_112}/sysroots/armv8a-oe-linux"
+    make CXX="${QNN_CXX}" -f Makefile.${TARGET}
+
+  elif [[ ${TARGET} == "oe-linux-aarch64-gcc9.3" ]]
+  then
+    QNN_CXX="${QNN_AARCH64_LINUX_OE_GCC_93}/sysroots/x86_64-oesdk-linux/usr/bin/aarch64-oe-linux/aarch64-oe-linux-g++ --sysroot=${QNN_AARCH64_LINUX_OE_GCC_93}/sysroots/aarch64-oe-linux"
+    make CXX="${QNN_CXX}" -f Makefile.${TARGET}
+
+  elif [[ ${TARGET} == "oe-linux-aarch64-gcc8.2" ]]
+  then
+     QNN_CXX="${QNN_AARCH64_LINUX_OE_GCC_82}/sysroots/x86_64-oesdk-linux/usr/bin/aarch64-oe-linux/aarch64-oe-linux-g++ --sysroot=${QNN_AARCH64_LINUX_OE_GCC_82}/sysroots/aarch64-oe-linux"
+     make CXX="${QNN_CXX}" -f Makefile.${TARGET}
+
+  elif [[ ${TARGET} == "ubuntu-aarch64-gcc7.5" ]]
+  then
+    QNN_CXX="aarch64-linux-gnu-g++"
+    make CXX=${QNN_CXX} -f Makefile.${TARGET}
+  elif [[ ${TARGET} == "ubuntu-aarch64-gcc9.4" ]]
+  then
+    QNN_CXX="${QNN_AARCH64_UBUNTU_GCC_94}/root/usr/bin/aarch64-linux-gnu-g++ --sysroot=${QNN_AARCH64_UBUNTU_GCC_94}/root"
+    make CXX="${QNN_CXX}" -f Makefile.${TARGET}
+
+  fi
+done
+
+# cp built library artifacts to output
+for QNN_TARGET in "${LIB_TARGETS[@]}"
+do
+  TARGET=${DEFAULT_SUPPORT_TARGETS[${QNN_TARGET}]}
+  if [[ -z ${TARGET} ]]
+  then
+    TARGET=${OTHER_SUPPORT_TARGETS[${QNN_TARGET}]}
+  fi
+  if [ -d "libs/${TARGET}" ]; then
+      mv libs/${TARGET} libs/${QNN_TARGET}
+  fi
+done
+
+/bin/cp -rf libs/* ${LIB_OUTPUT_DIR}
+
+
+echo "INFO: Output libraries saved at ${LIB_OUTPUT_DIR}"
+echo "INFO: Building ${QNN_MODEL_CPP} complete."

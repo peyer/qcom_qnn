@@ -1,0 +1,117 @@
+##############################################################################
+#
+# Copyright (c) 2022 Qualcomm Technologies, Inc.
+# All Rights Reserved.
+# Confidential and Proprietary - Qualcomm Technologies, Inc.
+#
+# All data and information contained in or disclosed by this document are
+# confidential and proprietary information of Qualcomm Technologies, Inc., and
+# all rights therein are expressly reserved. By accepting this material, the
+# recipient agrees that this material and the information contained therein
+# are held in confidence and in trust and will not be used, copied, reproduced
+# in whole or in part, nor its contents revealed in any manner to others
+# without the express written permission of Qualcomm Technologies, Inc.
+#
+##############################################################################
+
+developer_config:
+    enabled: False
+    custom_libraries:
+        # Uncomment and set the below path(s) if path(s) defined during
+        # tool setup need to be overridden
+        # ANDROID_NDK_PATH: "<PATH-TO-NDK>"
+        # CLANG_PATH: "<PATH-TO-CLANG>"
+        # QNN_SDK_ROOT: "<PATH-TO-UNZIPPED-SDK>"
+        # TENSORFLOW_HOME: "<PATH-TO-TENSORFLOW-INSTALLATION>"
+        # ONNX_HOME: "<PATH-TO-ONNX-INSTALLATION>"
+
+common:
+    model_zoo_path: "/home/model_zoo"
+    inference_timeout: '5000'  # milli-seconds
+    inference_retry_count: '4'
+    adb_path: "/opt/bin/adb"
+    remote_exec:
+        enabled: False
+qacc:
+    zero_output_check: False
+    file_type:
+        preproc: "raw"
+        infer: "bin, raw"
+        postproc: "txt"
+    auto_quantization:
+        param_quantizer: tf | symmetric | enhanced | adjusted
+        algorithms: default | cle
+        use_per_channel_quantization: True | False
+    comparator:
+        enabled: True #default
+        fetch-top: 1 #default
+        type: abs # default comparator for all outputs
+        tol: 0.01 # default tolerance for all outputs
+    default_platforms:
+        cpu:
+            platform:
+                name: qnn
+                precision: fp32
+                target_arch: x86_64-linux-clang
+                backend: cpu
+                tag: qnn_cpu_fp32
+        htp_x86:
+            platform:
+                name: qnn
+                precision: quant
+                target_arch: x86_64-linux-clang
+                backend: htp
+                tag: qnn_int8
+                runtime_params:
+                    vtcm_mb: 4
+                    rpc_control_latency: 100
+                converter_params:
+                    param_quantizer:  tf | symmetric | enhanced | adjusted
+                    algorithms: default | cle
+                    use_per_channel_quantization: True | False
+
+        htp_aarch64:
+            platform:
+                name: qnn
+                precision: quant
+                target_arch: aarch64-android
+                backend: htp
+                tag: qnn_int8
+                runtime_params:
+                    vtcm_mb: 4
+                    rpc_control_latency: 100
+                converter_params:
+                    param_quantizer:  tf | symmetric | enhanced | adjusted
+                    algorithms: default | cle
+                    use_per_channel_quantization: True | False
+        aic_x86:
+            platform:
+                name: qnn
+                precision: quant
+                target_arch: x86_64-linux-clang
+                backend: aic
+                tag: qnn_int8
+                compiler_params:
+                  compiler_num_of_cores: 8
+                  compiler_perfWarnings: true
+                converter_params:
+                    param_quantizer:  tf | symmetric | enhanced | adjusted
+                    algorithms: default | cle
+                    use_per_channel_quantization: True | False
+logging:
+    version: 1
+    disable_existing_loggers: True
+    formatters:
+        fileformat:
+            format: '%(asctime)s - %(levelname)-8s [%(module)-14s] - %(message)s'
+        consoleformat:
+            format: '%(levelname)s: %(message)s'
+    handlers:
+        console:
+            class: logging.StreamHandler
+            formatter: consoleformat
+            stream: ext://sys.stdout
+    root:
+        level: INFO
+        handlers: [ console ]
+

@@ -1,0 +1,50 @@
+model:
+    info:
+       desc: Resnet50 v7 reference model used.
+       batchsize: 1
+    globals:
+        count: 50
+        calib: 5 # -1 implies use all calibration images for PGQ.
+
+    dataset:
+        name: ILSVRC2012
+
+    inference-engine:
+        model_path: MLPerfModels/ResNetV1.5/modelFiles/ONNX/resnet50_v1.onnx
+        comparator:
+            enabled: True #default
+            fetch-top: 1 #default
+            type: snr # default comparator for all outputs
+            tol: 0.001 # default tolerance for all outputs
+
+        platforms:
+            - platform:
+                name: qnn
+                precision: fp32
+                target_arch: x86_64-linux-clang
+                backend: cpu
+                tag: qnn_fp32
+
+            - platform:
+                name: qnn
+                precision: quant
+                target_arch: x86_64-linux-clang
+                backend: htp
+                tag: qnn_int8
+                runtime_params:
+                  vtcm_mb: 4
+                  rpc_control_latency: 100
+                converter_params:
+                  param_quantizer: tf | enhanced | adjusted | symmetric
+                  algorithms: default | cle
+                  use_per_channel_quantization: True | False
+
+        inputs_info:
+            - data:
+                type: float32
+                shape: ['*',3,224,224]
+
+        outputs_info:
+            - resnetv17_dense0_fwd:
+                type: float32
+                shape: ['*',1000]

@@ -1,0 +1,57 @@
+.. #============================================================================
+   #
+   #  Copyright (c) 2021-2023 Qualcomm Technologies, Inc.
+   #  All Rights Reserved.
+   #  Confidential and Proprietary - Qualcomm Technologies, Inc.
+   #
+   #============================================================================
+
+================================
+Qualcomm Neural Network Delegate
+================================
+
+This is add-on package to corresponding QNN SDK, containing artifacts for QNN TFLite Delegate,
+which allows delegation of a part or all of a TFLite model to a Qualcomm hardware runtime,
+decreasing the workload of the CPU while achieving better performance and power efficiency.
+This specific delegate is backed by Qualcomm AI Engine Direct.
+
+Contents
+--------
+
+- QNN Delegate library.
+- QNN Delegate C header files.
+- Tools to run inference with delegate.
+- Sample input images for models.
+- QNN Delegate Reference Guide.
+
+Dependencies
+------------
+
+- This add-on package has been developed and tested with TFLite runtime from
+  TensorFlow v2.10.0
+- This add-on package requires QNN libraries with the same version.
+
+Known Issues and Limitations
+----------------------------
+
+
+=============
+Release Notes
+=============
+
+v2.13.0
+=======
+**07/31/2023**
+
+- Fixed preparation errors around Albert-, CRNN-, DPED-Instance-, and Yolo-v4 networks.
+- Supported TFLite implicit group Convolution 2D.
+
+
+v2.12.0
+=======
+**06/30/2023**
+
+- initial release for QNN TFLite Delegate.
+- Note that the aarch64-android libraries is built by ndk19c.
+  Switching to ndk25c is planned in roughly 2023/09 timeframe.
+
